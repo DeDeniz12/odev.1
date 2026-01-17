@@ -1,46 +1,44 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Volts;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import static edu.wpi.first.units.Units.Volts;
-
-import edu.wpi.first.wpilibj.DigitalInput; // Sensör için
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants; 
 
-public class FeederSubsystem extends SubsystemBase {
+public class feederSubsystem extends SubsystemBase {
 
-  // 1 Motor ve 1 Sensör
-  private final TalonFX feederMotor = new TalonFX(12);
-  private final DigitalInput noteSensor = new DigitalInput(0); // RIO üzerindeki DIO 0 portu
+  TalonFX feederMotor = new TalonFX(Constants.Feeder.feederID);
+
+  VoltageOut m_feederVoltage = new VoltageOut(0);
+  TalonFXConfiguration feederConfig = new TalonFXConfiguration();
   
-  private final VoltageOut m_request = new VoltageOut(0);
 
-  public FeederSubsystem() {
-    TalonFXConfiguration config = new TalonFXConfiguration();
-    config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    feederMotor.getConfigurator().apply(config);
+  DigitalInput sensorFeeder = new DigitalInput(Constants.Feeder.sensorID);
+
+  public feederSubsystem() {
+    feederConfig.CurrentLimits.SupplyCurrentLimit = 80;
+    feederConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    feederConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    feederConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    feederMotor.getConfigurator().apply(feederConfig, 0.05);
   }
 
-  public void setVoltage(double volts) {
-    feederMotor.setControl(m_request.withOutput(Volts.of(volts)));
+  public boolean getSensorFeeder() {
+    return sensorFeeder.get();
   }
 
-  public void stop() {
-    feederMotor.setControl(m_request.withOutput(Volts.of(0)));
-  }
-
-  // Sensörün durumu
-  public boolean isSensorTriggered() {
-  
-    return noteSensor.get(); 
+  public void setFeederVoltage(double voltage) {
+    feederMotor.setControl(m_feederVoltage.withOutput(Volts.of(voltage)));
   }
 
   @Override
   public void periodic() {
- 
-    SmartDashboard.putBoolean("Feeder Sensoru", isSensorTriggered());
+    SmartDashboard.putBoolean("sensorFeeder", getSensorFeeder());
   }
 }
